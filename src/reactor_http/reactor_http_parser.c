@@ -212,7 +212,7 @@ void reactor_http_parser_chunked_body(reactor_http_parser *parser, reactor_strea
     return;
   size = strtoul(start, NULL, 16);
   start = eol + 2;
-  if (size > (size_t) (end - start))
+  if (size + 2 > (size_t) (end - start))
     return;
 
   if (parser->flags & REACTOR_HTTP_PARSER_FLAGS_STREAM)
