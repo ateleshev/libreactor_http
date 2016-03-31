@@ -108,9 +108,9 @@ void reactor_http_client_tcp_client_event(void *state, int type, void *data)
 void reactor_http_client_stream_event(void *state, int type, void *data)
 {
   reactor_http_client *client;
+  reactor_stream_data *in;
 
   client = state;
-  (void) data;
 
   switch (type)
     {
@@ -119,7 +119,8 @@ void reactor_http_client_stream_event(void *state, int type, void *data)
       reactor_http_request_send(&client->request, &client->stream);
       break;
     case REACTOR_STREAM_DATA:
-      reactor_http_parser_data(&client->parser, data);
+      in = data;
+      reactor_http_parser_data(&client->parser, in);
       break;
     case REACTOR_STREAM_CLOSE:
       reactor_http_client_close(client);
