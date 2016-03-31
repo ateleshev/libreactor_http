@@ -172,10 +172,13 @@ void reactor_http_request_send(reactor_http_request *request, reactor_stream *st
   for (i = 0; i < vector_size(&request->fields); i ++)
     {
       field = (reactor_http_field *) vector_at(&request->fields, i);
-      reactor_stream_puts(stream, field->key);
-      reactor_stream_puts(stream, ": ");
-      reactor_stream_puts(stream, field->value);
-      reactor_stream_puts(stream, "\r\n");
+      if (field->key && field->value)
+        {
+          reactor_stream_puts(stream, field->key);
+          reactor_stream_puts(stream, ": ");
+          reactor_stream_puts(stream, field->value);
+          reactor_stream_puts(stream, "\r\n");
+        }
     }
   reactor_stream_puts(stream, "\r\n");
 }
@@ -221,10 +224,13 @@ void reactor_http_response_send(reactor_http_response *response, reactor_stream 
   for (i = 0; i < vector_size(&response->fields); i ++)
     {
       field = (reactor_http_field *) vector_at(&response->fields, i);
-      reactor_stream_puts(stream, field->key);
-      reactor_stream_puts(stream, ": ");
-      reactor_stream_puts(stream, field->value);
-      reactor_stream_puts(stream, "\r\n");
+      if (field->key && field->value)
+        {
+          reactor_stream_puts(stream, field->key);
+          reactor_stream_puts(stream, ": ");
+          reactor_stream_puts(stream, field->value);
+          reactor_stream_puts(stream, "\r\n");
+        }
     }
   reactor_stream_puts(stream, "\r\n");
   if (response->content_size)
