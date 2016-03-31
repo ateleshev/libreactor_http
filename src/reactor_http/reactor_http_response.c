@@ -94,23 +94,6 @@ void reactor_http_response_send(reactor_http_response *response, reactor_stream 
   reactor_stream_puts(stream, " ");
   reactor_stream_puts(stream, response->message);
   reactor_stream_puts(stream, "\r\n");
-  /*
-  if (session->server->name)
-    {
-      reactor_stream_puts(stream, "Server: ");
-      reactor_stream_puts(stream, session->server->name);
-      reactor_stream_puts(stream, "\r\n");
-    }
-  reactor_stream_puts(stream, "Date: ");
-  reactor_stream_puts(stream, session->server->date);
-  reactor_stream_puts(stream, "\r\nContent-Length: ");
-  reactor_stream_putu(stream, size);
-  if (size)
-    {
-      reactor_stream_puts(stream, "\r\nContent-type: ");
-      reactor_stream_puts(stream, type);
-    }
-  */
   reactor_stream_puts(stream, "\r\n\r\n");
   if (response->content_size)
     reactor_stream_write(stream, response->content, response->content_size);
@@ -154,14 +137,9 @@ void reactor_http_response_parser_header(reactor_http_response_parser *parser, r
   fields_count = REACTOR_HTTP_RESPONSE_MAX_FIELDS;
   parser->header_size = phr_parse_response(data->base, data->size, &response->version, &response->status,
                                            (const char **) &response->message, &message_size, fields, &fields_count, 0);
-  if (parser->header_size == -2)
+  if (parser->header_size == -2 || parser->header_size == -1)
     return;
 
-  if (parser->header_size == -1)
-    {
-      printf("error\n");
-      return;
-   }
   parser->base = data->base;
   parser->state = REACTOR_HTTP_RESPONSE_PARSER_CONTENT;
   parser->chunk_offset = parser->header_size;

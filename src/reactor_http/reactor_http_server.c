@@ -160,6 +160,15 @@ void reactor_http_server_session_close(reactor_http_server_session *session)
     }
 }
 
+int reactor_http_server_session_peer(reactor_http_server_session *session, struct sockaddr_in *sin, socklen_t *len)
+{
+  if (session->stream.state != REACTOR_STREAM_OPEN)
+    return -1;
+
+  *len = sizeof(*sin);
+  return getpeername(reactor_desc_fd(&session->stream.desc), sin, len);
+}
+
 void reactor_http_server_session_stream_event(void *state, int type, void *data)
 {
   reactor_http_server_session *session;
@@ -197,24 +206,33 @@ void reactor_http_server_session_parser_event(void *state, int type, void *data)
       break;
     case REACTOR_HTTP_PARSER_DONE:
       reactor_user_dispatch(&session->server->user, REACTOR_HTTP_SERVER_REQUEST, session);
-      //reactor_http_server_session_close(session);
       break;
     default:
-      (void) printf("uncaught server parser event %d\n", type);
       break;
     }
 }
 
-void reactor_http_server_session_respond(reactor_http_server_session *session, unsigned status, char *type,
-                                 char *content, size_t content_size)
+void reactor_http_server_session_respond(reactor_http_server_session *session, unsigned status,
+                                         char *content_type, char *content, size_t content_size)
+{
+  reactor_http_server_session_respond_fields(session, status, content_type, content, content_size, NULL, 0);
+}
+
+void reactor_http_server_session_respond_fields(reactor_http_server_session *session, unsigned status,
+                                                char *content_type, char *content, size_t content_size,
+                                                reactor_http_field *fields, size_t nfields)
 {
   reactor_http_response response;
+  size_t i;
 
   reactor_http_response_create(&response, status, content, content_size);
   if (session->server->name)
     reactor_http_response_add_header(&response, "Server", session->server->name);
   reactor_http_response_add_header(&response, "Date", session->server->date);
-  reactor_http_response_add_header(&response, "Content-type", type);
+  if (content_type)
+    reactor_http_response_add_header(&response, "Content-Type", content_type);
+  for (i = 0; i < nfields; i ++)
+    reactor_http_response_add_header(&response, fields[i].key, fields[i].value);
   reactor_http_response_send(&response, &session->stream);
   reactor_http_response_clear(&response);
 }

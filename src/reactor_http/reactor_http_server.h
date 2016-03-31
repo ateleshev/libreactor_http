@@ -50,8 +50,11 @@ void reactor_http_server_date_update(reactor_http_server *);
 void reactor_http_server_session_init(reactor_http_server_session *, reactor_http_server *);
 int  reactor_http_server_session_open(reactor_http_server_session *, int);
 void reactor_http_server_session_close(reactor_http_server_session *);
+int  reactor_http_server_session_peer(reactor_http_server_session *, struct sockaddr_in *, socklen_t *);
 void reactor_http_server_session_stream_event(void *, int, void *);
 void reactor_http_server_session_parser_event(void *, int, void *);
 void reactor_http_server_session_respond(reactor_http_server_session *, unsigned, char *, char *, size_t);
+void reactor_http_server_session_respond_fields(reactor_http_server_session *, unsigned, char *, char *, size_t,
+                                                reactor_http_field *, size_t);
 
 #endif /* REACTOR_HTTP_SERVER_H_INCLUDED */
