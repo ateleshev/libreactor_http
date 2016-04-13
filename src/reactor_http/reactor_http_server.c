@@ -41,6 +41,7 @@ int reactor_http_server_open(reactor_http_server *server, char *node, char *serv
   if (e == -1)
     return -1;
 
+  server->state = REACTOR_HTTP_SERVER_LISTENING;
   return 0;
 }
 
@@ -64,10 +65,12 @@ void reactor_http_server_close(reactor_http_server *server)
     {
       server->state = REACTOR_HTTP_SERVER_CLOSING;
       reactor_tcp_server_close(&server->tcp_server);
+      reactor_timer_close(&server->date_timer);
     }
 
   if (server->state != REACTOR_HTTP_SERVER_CLOSED &&
-      server->tcp_server.state == REACTOR_TCP_SERVER_CLOSED)
+      server->tcp_server.state == REACTOR_TCP_SERVER_CLOSED &&
+      server->date_timer.state == REACTOR_TIMER_CLOSED)
     {
       server->state = REACTOR_HTTP_SERVER_CLOSED;
       reactor_user_dispatch(&server->user, REACTOR_HTTP_SERVER_CLOSE, NULL);
@@ -105,7 +108,7 @@ void reactor_http_server_tcp_event(void *state, int type, void *data)
       reactor_user_dispatch(&server->user, REACTOR_HTTP_SERVER_ACCEPT, session);
       break;
     case REACTOR_TCP_SERVER_CLOSE:
-      reactor_user_dispatch(&server->user, REACTOR_HTTP_SERVER_CLOSE, NULL);
+      reactor_http_server_close(server);
       break;
     case REACTOR_TCP_SERVER_ERROR:
       reactor_user_dispatch(&server->user, REACTOR_HTTP_SERVER_ERROR, data);
@@ -121,6 +124,8 @@ void reactor_http_server_date_event(void *state, int type, void *data)
   server = state;
   if (type == REACTOR_TIMER_TIMEOUT)
     reactor_http_server_date_update(server);
+  else if (type == REACTOR_TIMER_CLOSE)
+    reactor_http_server_close(server);
 }
 
 void reactor_http_server_date_update(reactor_http_server *server)
@@ -181,6 +186,7 @@ void reactor_http_server_session_stream_event(void *state, int type, void *data)
       reactor_http_parser_data(&session->parser, data);
       break;
     case REACTOR_STREAM_ERROR:
+      reactor_http_server_session_close(session);
       reactor_user_dispatch(&session->server->user, REACTOR_HTTP_SERVER_ERROR, NULL);
       break;
     case REACTOR_STREAM_END:
